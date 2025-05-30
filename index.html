@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Quiz Game</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #e3f2fd;
+      padding: 20px;
+      margin: 0;
+      text-align: center;
+    }
+
+    .quiz-container {
+      background: #fff;
+      border-radius: 15px;
+      max-width: 800px;
+      padding: 30px;
+      margin: auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      transition: all 0.3s ease-in-out;
+    }
+
+    .progress-bar {
+      width: 90%;
+      background: #ddd;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 20px auto;
+      height: 12px;
+    }
+
+    .progress {
+      height: 12px;
+      background: #42a5f5;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    .question img {
+      max-width: 100%;
+      height: auto;
+      margin-bottom: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .answers button {
+      margin: 10px;
+      padding: 12px 24px;
+      font-size: 14px;
+      border: none;
+      border-radius: 8px;
+      background-color: #1976d2;
+      color: white;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .answers button:hover {
+      background-color: #1565c0;
+    }
+
+    .correct {
+      background-color: #43a047 !important;
+    }
+
+    .incorrect {
+      background-color: #e53935 !important;
+    }
+
+    .score-board {
+      font-size: 14px;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    .stars {
+      font-size: 28px;
+      margin-top: 10px;
+      color: gold;
+    }
+
+    .mark_start {
+      font-size: 14px;
+      padding: 5px;
+      font-weight: bold;
+    }
+
+    p {
+      font-size: 14px;
+    }
+
+    .result-container h2 {
+      animation: fadeInDown 0.6s ease;
+    }
+
+    .result-review {
+      text-align: left;
+      margin-top: 20px;
+      animation: slideIn 0.8s ease forwards;
+    }
+
+    .result-review li {
+      margin-bottom: 15px;
+      padding: 10px;
+      background-color: #f9f9f9;
+      border-left: 5px solid transparent;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      list-style: none;
+      transition: background 0.3s ease;
+    }
+
+    .result-review li.correct-answer {
+      border-color: #4caf50;
+    }
+
+    .result-review li.wrong-answer {
+      border-color: #f44336;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateY(30px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0px);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeInDown {
+      from {
+        transform: translateY(-20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="quiz-container">
+    <div class="mark_start">40 Marks</div>
+    <div class="progress-bar">
+      <div class="progress" id="progress"></div>
+    </div>
+    <p id="qCount">1 of 20</p>
+    <div class="question" id="question"></div>
+    <div class="answers" id="answers">
+      <button onclick="selectAnswer(this, 'i')">i</button>
+      <button onclick="selectAnswer(this, 'ii')">ii</button>
+      <button onclick="selectAnswer(this, 'iii')">iii</button>
+      <button onclick="selectAnswer(this, 'iv')">iv</button>
+    </div>
+    <div class="score-board">Score: <span id="score">40</span></div>
+    <div class="stars" id="stars"></div>
+  </div>
+
+  <script>
+    const questions = [
+      { qImg: "https://drive.google.com/file/d/1881x-CU9gl-YR3suyg0GGBSFvs4yAo1B/view?usp=sharing", answer: "i" },
+      { qImg: "https://drive.google.com/file/d/1QMTIO_XdRP6i7Dx-PahXgQNd5LMct7yM/view?usp=drive_link", answer: "ii" },
+      { qImg: "https://drive.google.com/file/d/1-yx-RHCdVnquDPozaRaQgJQaTSj6sZuv/view?usp=drive_link", answer: "iii" },
+      { qImg: "https://drive.google.com/file/d/1GYg1fmlbb4_nnG--ZKjbIv3AvFURGv3R/view?usp=drive_link", answer: "iv" },
+      { qImg: "https://drive.google.com/file/d/1-S4SkE7UU7WdkvHgF2oL09YaqIVOYen_/view?usp=drive_link", answer: "i" },
+      { qImg: "https://drive.google.com/file/d/1OsH6FvUGrzJJxm13B1UplY1Wj1wGo8OM/view?usp=drive_link", answer: "ii" }
+    ];
+
+    const shuffledQuestions = questions.sort(() => Math.random() - 0.5);
+    let current = 0;
+    let score = 40;
+    let selectedAnswers = [];
+
+    function loadQuestion() {
+      const q = shuffledQuestions[current];
+      document.getElementById("question").innerHTML =
+        `<img src="${q.qImg}" alt="Question ${current + 1}"><br><br>`;
+
+      document.getElementById("qCount").innerText = `${current + 1} of ${shuffledQuestions.length}`;
+      document.getElementById("progress").style.width = ((current + 1) / shuffledQuestions.length * 100) + "%";
+
+      const buttons = document.querySelectorAll('.answers button');
+      buttons.forEach(btn => {
+        btn.disabled = false;
+        btn.classList.remove('correct', 'incorrect');
+      });
+    }
+
+    function selectAnswer(button, option) {
+      const correctAnswer = shuffledQuestions[current].answer;
+      const buttons = document.querySelectorAll('.answers button');
+      buttons.forEach(btn => btn.disabled = true);
+
+      selectedAnswers.push({
+        questionImage: shuffledQuestions[current].qImg,
+        selected: option,
+        correct: correctAnswer
+      });
+
+      if (option === correctAnswer) {
+        button.classList.add('correct');
+        score += 5;
+      } else {
+        button.classList.add('incorrect');
+        score -= 2;
+      }
+
+      document.getElementById("score").innerText = score;
+
+      setTimeout(() => {
+        current++;
+        if (current < shuffledQuestions.length) {
+          loadQuestion();
+        } else {
+          showFinalResult();
+        }
+      }, 800);
+    }
+
+    function showFinalResult() {
+      let stars = 0;
+      if (score >= 140) stars = 5;
+      else if (score >= 120) stars = 4;
+      else if (score >= 100) stars = 3;
+      else if (score >= 80) stars = 2;
+      else if (score >= 60) stars = 1;
+
+      let starsHTML = '★'.repeat(stars) + '☆'.repeat(5 - stars);
+
+      let message = "";
+      if (stars >= 4) {
+        message = "🎉 Excellent work! Keep it up!";
+      } else if (stars >= 2) {
+        message = "👍 Good effort! You're improving!";
+      } else {
+        message = "💪 Don't give up! Try again and you'll get better!";
+      }
+
+      let reviewHTML = `<div class="result-container">
+        <h2>Quiz Complete!</h2>
+        <p>Your Score: <strong>${score}</strong></p>
+        <div class="stars">${starsHTML}</div>
+        <p>${message}</p>
+        <div class="result-review"><h3>Answer Review:</h3><ul>`;
+
+      selectedAnswers.forEach((entry, index) => {
+        const isCorrect = entry.selected === entry.correct;
+        const cssClass = isCorrect ? 'correct-answer' : 'wrong-answer';
+        reviewHTML += `
+          <li class="${cssClass}">
+            <strong>Q${index + 1}:</strong><br>
+            <img src="${entry.questionImage}" alt="Q${index + 1}" style="max-width:100%; border-radius:8px; margin-top:6px;"><br>
+            You selected <strong style="color:${isCorrect ? 'green' : 'red'}">${entry.selected}</strong>,
+            correct answer is <strong style="color:green">${entry.correct}</strong>.
+          </li>`;
+      });
+
+      reviewHTML += `</ul></div></div>`;
+
+      document.querySelector('.quiz-container').innerHTML = reviewHTML;
+    }
+
+    loadQuestion();
+  </script>
+</body>
+</html>
